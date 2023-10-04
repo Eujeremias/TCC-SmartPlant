@@ -5,8 +5,8 @@
 <p><b></b>Não procure ler este arquivo para entender o código da cabeça aos pés. Como disse, aqui não é um diário, são: processos apresentadas de forma coloquial do meu TCC.</b></p>
 
 <p><b>Sobre mim</b></p>
-* Estudante de Sistemas de Informação no IFAL - Maceió 🎒
-* Técnico em Informática para internet no IFAL - Rio Largo 🎒
-* Sou maneiro 😎
-* O que aprendo em três horas de estudo, aprendo em vinte minutos com meus colegas
-* Gosto de trabalho em equipe 😄
+1. Estudante de Sistemas de Informação no IFAL - Maceió 🎒
+2. Técnico em Informática para internet no IFAL - Rio Largo 🎒
+3. Sou maneiro 😎
+4. O que aprendo em três horas de estudo, aprendo em vinte minutos com meus colegas
+5. Gosto de trabalho em equipe 😄
