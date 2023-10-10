@@ -1,8 +1,18 @@
+//01/09/2023: <<funcionou>> codigo obtido na ide 2.1.1 em arquivo=>exemplos=>thingsboard=>0003_esp8266_esp32_send_data
+//com bib ThingsBoard.h versao 0.10.1 e arduinojson versão 6.21.3
+//haverá alguns warnings durante a compilação mas tudo bem.
 
-// #include <WiFi.h> //lib para configuração do Wifi (para esp32)
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
+
+#define THINGSBOARD_ENABLE_PROGMEM 0  //não remover essa linha! (ao remover o nodemcu ficará reiniciando sozinho)
+#include <ThingsBoard.h>
+
+constexpr char WIFI_SSID[] = "IFAL - Rio Largo";
+constexpr char WIFI_PASSWORD[] = "ifalriolargo";
+constexpr char TOKEN[] = "FOZj9eUUvLuB7PpClnYO";
+
 
 // bibliotecas e comandos oled ------------------------------
 #include <Wire.h>
@@ -14,17 +24,13 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 //------------------------------------------------------------------------
 
-// importanto arquivo HTML -------------------------------------------
-#include "index.h"
-//------------------------------------------------------------------------
-
-// dependência thingsboard
-#include "ThingsBoard.h"
-#define THINGSBOARD_ENABLE_PROGMEM 0  //não remover essa linha! (ao remover o nodemcu ficará reiniciando sozinho)
-
-constexpr char WIFI_SSID[] = "IFAL - Rio Largo";
-constexpr char WIFI_PASSWORD[] = "ifalriolargo";
-constexpr char TOKEN[] = "FOZj9eUUvLuB7PpClnYO";
+int pinoSensorUmidade = A0;
+int valor;
+int porcentagem;
+unsigned long int ultimo_tempo = 0;
+int led = D0;
+int aleatorio;
+int contador = 0;
 
 constexpr char THINGSBOARD_SERVER[] = "demo.thingsboard.io";
 constexpr uint16_t THINGSBOARD_PORT = 1883U;
@@ -66,37 +72,11 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 WiFiClient espClient;
 ThingsBoard tb(espClient, MAX_MESSAGE_SIZE);
 
-void InitWiFi() {
-  Serial.println("Connecting to AP ...");
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("Connected to AP");
-}
-
-bool reconnect() {
-  const wl_status_t status = WiFi.status();  // Check to ensure we aren't connected yet
-  if (status == WL_CONNECTED) {
-    return true;
-  }
-  InitWiFi();  // If we aren't establish a new connection to the given WiFi network
-  return true;
-}
-
-int pinoSensorUmidade = A0;
-int valor;
-int porcentagem;
-unsigned long int ultimo_tempo = 0;
-//const char* ssid = "Espaço 4.0";
-//const char* password = "Esp$@$2022";
-int led = D0;
-int aleatorio;
-int contador = 0;
-int porcentagemUmidade;
-
 ESP8266WebServer server(80);
+
+// importanto arquivo HTML -------------------------------------------
+#include "index.h"
+//------------------------------------------------------------------------
 
 void raiz() {
   String s = pagina;
@@ -109,17 +89,33 @@ void gerar_numero() {
   server.send(200, "text/plane", x);
 }
 
-void setup() {
-  Serial.begin(115200);
+void InitWiFi() {
+  Serial.println("Connecting to AP ...");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("Connected to AP");
+  Serial.println(WiFi.localIP());
+}
+
+bool reconnect() {
+  const wl_status_t status = WiFi.status();  // Check to ensure we aren't connected yet
+  if (status == WL_CONNECTED) {
+    return true;
+  }
+  InitWiFi();  // If we aren't establish a new connection to the given WiFi network
+  return true;
+}
+
+void setup() {
+  randomSeed(analogRead(0));
+  Serial.begin(115200);
   pinMode(pinoSensorUmidade, INPUT);
-  pinMode(led, OUTPUT);
+  delay(1000);
   InitWiFi();
 
-  Serial.println("");
-
-  //---------OLED----------------------
-  //display.begin() // o if a seguir irá executar o display.begin()
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {  // Address 0x3D for 128x64
     Serial.println(F("SSD1306 allocation failed"));
     for (;;)
@@ -202,11 +198,18 @@ void setup() {
 }
 
 void loop() {
-  // server.handleClient();
-
-    delay(500);
+  server.handleClient();
+  if (millis() - ultimo_tempo >= 500) {
     valor = analogRead(pinoSensorUmidade);
-    porcentagemUmidade = map(valor, 484, 1023, 100, 0);
+    porcentagem = map(valor, 484, 1023, 100, 0);
+    Serial.println(porcentagem);
+
+    aleatorio = random(101);
+
+    //delay(1000);
+
+    valor = analogRead(pinoSensorUmidade);
+    porcentagem = map(valor, 484, 1023, 100, 0);
     // Serial.println(porcentagemUmidade);
     //----comandos para atualizar display OTA ---------------------------
     display.clearDisplay();
@@ -229,7 +232,7 @@ void loop() {
 
     display.setCursor(0, 36);
     display.print("Umidade solo: ");
-    display.print(porcentagemUmidade);
+    display.print(porcentagem);
     display.println(" %");
 
     aleatorio = random(101);
@@ -237,8 +240,6 @@ void loop() {
     display.print("random: ");
     display.print(aleatorio);
     display.display();
-
-    // mostrando no thingsboard
 
     if (!reconnect()) {
       return;
@@ -252,9 +253,17 @@ void loop() {
       }
     }
 
-    tb.sendTelemetryInt("Valor aleatório", aleatorio);
-    Serial.print("Valor aleatorio: ");
-    Serial.println(aleatorio);
-    tb.loop();
+    // Uploads new telemetry to ThingsBoard using HTTP.
+    Serial.println("Sending temperature data...");
+    tb.sendTelemetryInt("Valor aleatorio", random(0, 100));
+    tb.sendTelemetryInt("Umidade do solo", porcentagem);
+    Serial.print("Random number: ");
+    Serial.println(random(0, 100));
+    // Serial.println("Sending humidity data...");
+    // tb.sendTelemetryFloat("Umidade", random(40, 90));
 
+
+    tb.loop();
+    ultimo_tempo = millis();
+  }
 }

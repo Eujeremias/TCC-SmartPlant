@@ -8,7 +8,7 @@
 
 constexpr char WIFI_SSID[] = "IFAL - Rio Largo";
 constexpr char WIFI_PASSWORD[] = "ifalriolargo";
-constexpr char TOKEN[] = "WLMk433vZ1vkwPaoKmxl";
+constexpr char TOKEN[] = "FOZj9eUUvLuB7PpClnYO";
 
 int pinoSensorUmidade = A0;
 int valor;
@@ -83,8 +83,8 @@ void setup() {
 
 void loop() {
   // server.handleClient();
-  valor = analogRead(pinoSensorUmidade);  
-  porcentagem =map(valor, 484, 1023, 100, 0);
+  valor = analogRead(pinoSensorUmidade);
+  porcentagem = map(valor, 484, 1023, 100, 0);
   Serial.println(porcentagem);
   delay(1000);
 
