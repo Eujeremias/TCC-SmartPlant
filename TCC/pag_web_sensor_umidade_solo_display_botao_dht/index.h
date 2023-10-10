@@ -67,7 +67,7 @@ const char pagina[] PROGMEM = R"=====(
         umidade();
         umidadeTempo();
         temperatura();
-			}, 1000); //taxa de atualização: 1000 milisegundos
+			}, 500); //taxa de atualização: 1000 milisegundos
 
 		</script>
 

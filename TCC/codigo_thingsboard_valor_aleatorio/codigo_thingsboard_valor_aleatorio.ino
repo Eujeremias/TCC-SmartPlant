@@ -8,7 +8,11 @@
 
 constexpr char WIFI_SSID[] = "IFAL - Rio Largo";
 constexpr char WIFI_PASSWORD[] = "ifalriolargo";
-constexpr char TOKEN[] = "HUY9p1Ez1p05DL7RlAyt";
+constexpr char TOKEN[] = "WLMk433vZ1vkwPaoKmxl";
+
+int pinoSensorUmidade = A0;
+int valor;
+int porcentagem;
 
 constexpr char THINGSBOARD_SERVER[] = "demo.thingsboard.io";
 constexpr uint16_t THINGSBOARD_PORT = 1883U;
@@ -79,6 +83,9 @@ void setup() {
 
 void loop() {
   // server.handleClient();
+  valor = analogRead(pinoSensorUmidade);  
+  porcentagem =map(valor, 484, 1023, 100, 0);
+  Serial.println(porcentagem);
   delay(1000);
 
   if (!reconnect()) {
@@ -93,10 +100,10 @@ void loop() {
     }
   }
 
-
   // Uploads new telemetry to ThingsBoard using HTTP.
   Serial.println("Sending temperature data...");
   tb.sendTelemetryInt("Valor aleatorio", random(0, 100));
+  tb.sendTelemetryInt("Umidade do solo", porcentagem);
   Serial.print("Random number: ");
   Serial.println(random(0, 100));
   // Serial.println("Sending humidity data...");

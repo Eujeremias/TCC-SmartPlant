@@ -27,23 +27,60 @@ float temp;
 float umi;
 
 //=============================
-  // #include "ThingsBoard.h"
-  // #include "pubsubclient.h"
-  #define WIFI_AP "IFAL - Rio Largo"
-  #define WIFI_PASSWORD "ifalriolargo"
-  // #define TOKEN "kEfrXugwCcwmtOKAv9dL"
+#include "ThingsBoard.h"
+// #include "pubsubclient.h"
+#define THINGSBOARD_ENABLE_PROGMEM 0  //não remover essa linha! (ao remover o nodemcu ficará reiniciando sozinho)
+#define WIFI_AP "IFAL - Rio Largo"
+#define WIFI_PASSWORD "ifalriolargo"
+#define TOKEN "WLMk433vZ1vkwPaoKmxl"
 
-  // const char* mqtServer = "demo.thingsboard.io";
-  // const char* mqtUser = "nmais";
-  // const char* mqtPassword = "2023";
-  // const char* mqtClient = "MaisEnsino"
+const char* mqtServer = "demo.thingsboard.io";
+constexpr uint16_t THINGSBOARD_PORT = 1883U;
+constexpr uint32_t MAX_MESSAGE_SIZE = 128U;
 
-  
-  // WiFiClient espClient;
-  // ThingsBoard tb(espClient);
+constexpr char ROOT_CERT[] = R"(-----BEGIN CERTIFICATE-----
+MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
+WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
+ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
+MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
+h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
+0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
+A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
+T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
+B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
+B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
+KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
+OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
+jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
+qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
+rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
+HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
+hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
+ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
+3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
+NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
+ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
+TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
+jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
+oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
+4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
+mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
+emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
+-----END CERTIFICATE-----
+)";
 
-  // int status = WL_IDLE_STATUS;
-  // #define THINGSBOARD_SERVER "demo.thingsboard.io"
+// const char* mqtUser = "nmais";
+// const char* mqtPassword = "2023";
+// const char* mqtClient = "MaisEnsino"
+
+
+WiFiClient espClient;
+ThingsBoard tb(espClient);
+
+// int status = WL_IDLE_STATUS;
+// #define THINGSBOARD_SERVER "demo.thingsboard.io"
 
 
 //============Thingsboard==========
@@ -51,8 +88,8 @@ float umi;
 
 // const char* ssid = "AsaBranca";
 // const char* password = "87323375";
-// const char* ssid = "IFAL - Rio Largo";
-// const char* password = "ifalriolargo";
+const char* ssid = "IFAL - Rio Largo";
+const char* password = "ifalriolargo";
 //const char* ssid = "Espaço 4.0";
 //const char* password = "Esp$@$2022";
 
@@ -63,11 +100,11 @@ float umi;
 // IPAddress secondaryDNS(8, 8, 4, 4);
 
 
-IPAddress local_IP(10, 220, 30, 116);
-IPAddress gateway(10, 220, 30, 1);
-IPAddress subnet(255, 255, 255, 0);
-IPAddress primaryDNS(8, 8, 8, 8);
-IPAddress secondaryDNS(8, 8, 4, 4);
+// IPAddress local_IP(10, 220, 30, 116);
+// IPAddress gateway(10, 220, 30, 1);
+// IPAddress subnet(255, 255, 255, 0);
+// IPAddress primaryDNS(8, 8, 8, 8);
+// IPAddress secondaryDNS(8, 8, 4, 4);
 
 
 int led = D0;
@@ -112,7 +149,7 @@ void umidade() {
 }
 
 void umidadeTempo() {
-  float umi = dht.readHumidity();
+  umi = dht.readHumidity();
   String umidadeTempoString = String(umi);
   server.send(200, "text/plane", umidadeTempoString);
   float tempC = dht.readTemperature();
@@ -142,7 +179,7 @@ void temperatura() {
   temp = dht.readTemperature();
   String temperaturaString = String(temp);
   server.send(200, "text/plane", temperaturaString);
-
+  /*
   if (millis() - ultimo > 500) {
     digitalWrite(led, !digitalRead(led));
     Serial.println(contador);
@@ -165,7 +202,7 @@ void temperatura() {
     contador++;
     ultimo = millis();
   }
-
+  */
 }
 //============================================================
 
@@ -210,7 +247,7 @@ void setup() {
   delay(1000);
 
   //--------------------------------
-  WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);  //PASSA OS PARÂMETROS PARA A FUNÇÃO QUE VAI SETAR O IP FIXO NO NODEMCU
+  // WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);  //PASSA OS PARÂMETROS PARA A FUNÇÃO QUE VAI SETAR O IP FIXO NO NODEMCU
   Serial.println("");
   while (WiFi.status() != WL_CONNECTED) {
     digitalWrite(led, !digitalRead(led));
@@ -241,7 +278,6 @@ void setup() {
   // ArduinoOTA.setPort(8266);
 
   // Hostname defaults to esp8266-[ChipID]
-
 
   // No authentication by default
   //ArduinoOTA.setPassword("admin");
@@ -310,14 +346,17 @@ void setup() {
 }
 
 void loop() {
-  float umi = dht.readHumidity();
+
+  valorUmidade = analogRead(pinoSensorUmidade);
+  porcentagemUmidade = map(valorUmidade, 640, 1024, 100, 0);
 
   ArduinoOTA.handle();    //Escuta OTA
   server.handleClient();  //Escuta requisição dos clientes
 
   if (millis() - ultimo > 500) {
-    // temperatura();
+    temperatura();
     umidadeTempo();
+
     digitalWrite(led, !digitalRead(led));
     Serial.println(contador);
     //----comandos para atualizar display OTA ---------------------------
@@ -332,22 +371,26 @@ void loop() {
     display.setCursor(0, 15);
     display.print("Temperatura: ");
     display.print(temp);
-    display.println(":C");
+    display.println(" *C");
 
     display.setCursor(0, 30);
-    display.print("Umidade solo: ");
-    display.print(porcentagemUmidade);
-    display.println("%");
-
-    display.setCursor(0, 45);
     display.print("Umidade do ar: ");
     display.print(umi);
-    display.println("%");
+    display.println(" %");
 
-    // tb.sendTelemetryInt("Umidade do solo", valorUmidade);
+    display.setCursor(0, 45);
+    display.print("Umidade solo: ");
+    display.print(porcentagemUmidade);
+    display.println(" %");
+    display.display();
+
+    tb.sendTelemetryInt("Porcentagem umidade", porcentagemUmidade);
+    Serial.print("Umidade do solo: ");
+    Serial.println(porcentagemUmidade);
     //display.setCursor(0, 45);
     //display.println("Instituto Federal de Alagoas");
-    display.display();
+    tb.loop();
+
     //--------------------------------
     contador++;
     ultimo = millis();
