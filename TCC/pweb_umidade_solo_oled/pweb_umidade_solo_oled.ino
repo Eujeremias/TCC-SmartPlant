@@ -24,7 +24,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 constexpr char WIFI_SSID[] = "IFAL - Rio Largo";
 constexpr char WIFI_PASSWORD[] = "ifalriolargo";
-constexpr char TOKEN[] = "FOZj9eUUvLuB7PpClnYO";
+constexpr char TOKEN[] = "WLMk433vZ1vkwPaoKmxl";
 
 constexpr char THINGSBOARD_SERVER[] = "demo.thingsboard.io";
 constexpr uint16_t THINGSBOARD_PORT = 1883U;

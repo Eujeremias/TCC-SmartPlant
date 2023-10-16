@@ -5,13 +5,16 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
 
 #define THINGSBOARD_ENABLE_PROGMEM 0  //não remover essa linha! (ao remover o nodemcu ficará reiniciando sozinho)
 #include <ThingsBoard.h>
 
 constexpr char WIFI_SSID[] = "IFAL - Rio Largo";
 constexpr char WIFI_PASSWORD[] = "ifalriolargo";
-constexpr char TOKEN[] = "FOZj9eUUvLuB7PpClnYO";
+constexpr char TOKEN[] = "WLMk433vZ1vkwPaoKmxl";
 
 
 // bibliotecas e comandos oled ------------------------------
@@ -24,6 +27,14 @@ constexpr char TOKEN[] = "FOZj9eUUvLuB7PpClnYO";
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 //------------------------------------------------------------------------
 
+// dependências DHT11---------------
+#include "DHT.h"
+#define PINODHT D7
+
+#define MODELODHT DHT11
+DHT dht(PINODHT, MODELODHT);
+
+
 int pinoSensorUmidade = A0;
 int valor;
 int porcentagem;
@@ -31,6 +42,8 @@ unsigned long int ultimo_tempo = 0;
 int led = D0;
 int aleatorio;
 int contador = 0;
+float temperatura;
+float umidadeDoAr;
 
 constexpr char THINGSBOARD_SERVER[] = "demo.thingsboard.io";
 constexpr uint16_t THINGSBOARD_PORT = 1883U;
@@ -89,6 +102,25 @@ void gerar_numero() {
   server.send(200, "text/plane", x);
 }
 
+void mostrarUmidadeSolo() {
+  valor = analogRead(pinoSensorUmidade);
+  porcentagem = map(valor, 484, 1023, 100, 0);
+  String y = String(porcentagem);
+  server.send(200, "text/plane", y);
+}
+
+void mostrarTemperatura(){
+  temperatura = dht.readTemperature();
+  String z = String(temperatura);
+  server.send(200, "text/plane", z);
+}
+
+void mostrarUmidadeAr(){
+  umidadeDoAr = dht.readHumidity();
+  String a = String(umidadeDoAr);
+  server.send(200, "text/plane", a);
+}
+
 void InitWiFi() {
   Serial.println("Connecting to AP ...");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -110,6 +142,58 @@ bool reconnect() {
 }
 
 void setup() {
+  //Inicializando
+  dht.begin();
+
+
+  //Relacionado ao WIFI------------------------------------------------
+  // WiFi.mode(WIFI_STA);
+  // WiFi.begin(ssid, password);
+  // while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+  //   Serial.println("Connection Failed! Rebooting...");
+  //   delay(5000);
+  //   ESP.restart();
+  // }
+
+  // ArduinoOTA.onStart([]() {
+  //   String type;
+  //   if (ArduinoOTA.getCommand() == U_FLASH) {
+  //     type = "sketch";
+  //   } else {  // U_FS
+  //     type = "filesystem";
+  //   }
+
+  //   // NOTE: if updating FS this would be the place to unmount FS using FS.end()
+  //   Serial.println("Start updating " + type);
+  // });
+  // ArduinoOTA.onEnd([]() {
+  //   Serial.println("\nEnd");
+  // });
+  // ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+  //   Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  // });
+  // ArduinoOTA.onError([](ota_error_t error) {
+  //   Serial.printf("Error[%u]: ", error);
+  //   if (error == OTA_AUTH_ERROR) {
+  //     Serial.println("Auth Failed");
+  //   } else if (error == OTA_BEGIN_ERROR) {
+  //     Serial.println("Begin Failed");
+  //   } else if (error == OTA_CONNECT_ERROR) {
+  //     Serial.println("Connect Failed");
+  //   } else if (error == OTA_RECEIVE_ERROR) {
+  //     Serial.println("Receive Failed");
+  //   } else if (error == OTA_END_ERROR) {
+  //     Serial.println("End Failed");
+  //   }
+  // });
+  // ArduinoOTA.begin();
+  // Serial.println("Ready");
+  // Serial.print("IP address: ");
+  // Serial.println(WiFi.localIP());
+
+  //----------------------------------------------
+
+
   randomSeed(analogRead(0));
   Serial.begin(115200);
   pinMode(pinoSensorUmidade, INPUT);
@@ -193,77 +277,81 @@ void setup() {
   //metódos abaixo recebe valor tipo string no 2° parâmetro
   server.on("/", raiz);
   server.on("/lerNUM", gerar_numero);
+  server.on("/lerUmidade", mostrarUmidadeSolo);
+  server.on("/lerTemperatura", mostrarTemperatura);
+  server.on("/lerUmidadeAr", mostrarUmidadeAr);
 
-  server.begin();
+    server.begin();
 }
 
 void loop() {
   server.handleClient();
-  if (millis() - ultimo_tempo >= 500) {
-    valor = analogRead(pinoSensorUmidade);
-    porcentagem = map(valor, 484, 1023, 100, 0);
-    Serial.println(porcentagem);
 
-    aleatorio = random(101);
+  temperatura = dht.readTemperature();
+  umidadeDoAr = dht.readHumidity();
 
-    //delay(1000);
+  valor = analogRead(pinoSensorUmidade);
+  porcentagem = map(valor, 484, 1023, 100, 0);
+  Serial.println(porcentagem);
 
-    valor = analogRead(pinoSensorUmidade);
-    porcentagem = map(valor, 484, 1023, 100, 0);
-    // Serial.println(porcentagemUmidade);
-    //----comandos para atualizar display OTA ---------------------------
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(0, 0);
-    //display.println(WiFi.localIP());
-    //display.setCursor(0, 15);
-    // display.println(contador);
+  aleatorio = random(101);
 
-    display.setCursor(0, 12);
-    display.print("Temperatura: ");
-    //display.print(temp);
-    display.println(" *C");
+  //delay(1000);
+  // Serial.println(porcentagemUmidade);
+  //----comandos para atualizar display OTA ---------------------------
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+  //display.println(WiFi.localIP());
+  //display.setCursor(0, 15);
+  // display.println(contador);
 
-    display.setCursor(0, 24);
-    display.print("Umidade do ar: ");
-    //display.print(umi);
-    display.println(" %");
+  display.setCursor(0, 12);
+  display.print("Temperatura: ");
+  //display.print(temp);
+  display.println(" *C");
 
-    display.setCursor(0, 36);
-    display.print("Umidade solo: ");
-    display.print(porcentagem);
-    display.println(" %");
+  display.setCursor(0, 24);
+  display.print("Umidade do ar: ");
+  display.print(umidadeDoAr);
+  display.println(" %");
 
-    aleatorio = random(101);
-    display.setCursor(0, 48);
-    display.print("random: ");
-    display.print(aleatorio);
-    display.display();
+  display.setCursor(0, 36);
+  display.print("Umidade solo: ");
+  display.print(porcentagem);
+  display.println(" %");
 
-    if (!reconnect()) {
+  aleatorio = random(101);
+  display.setCursor(0, 48);
+  display.print("random: ");
+  display.print(aleatorio);
+  display.display();
+
+  if (!reconnect()) {
+    return;
+  }
+
+  if (!tb.connected()) {  // Reconnect to the ThingsBoard server, if a connection was disrupted or has not yet been established
+    Serial.printf("Connecting to: (%s) with token (%s)\n", THINGSBOARD_SERVER, TOKEN);
+    if (!tb.connect(THINGSBOARD_SERVER, TOKEN, THINGSBOARD_PORT)) {
+      Serial.println("Failed to connect");
       return;
     }
-
-    if (!tb.connected()) {  // Reconnect to the ThingsBoard server, if a connection was disrupted or has not yet been established
-      Serial.printf("Connecting to: (%s) with token (%s)\n", THINGSBOARD_SERVER, TOKEN);
-      if (!tb.connect(THINGSBOARD_SERVER, TOKEN, THINGSBOARD_PORT)) {
-        Serial.println("Failed to connect");
-        return;
-      }
-    }
-
-    // Uploads new telemetry to ThingsBoard using HTTP.
-    Serial.println("Sending temperature data...");
-    tb.sendTelemetryInt("Valor aleatorio", random(0, 100));
-    tb.sendTelemetryInt("Umidade do solo", porcentagem);
-    Serial.print("Random number: ");
-    Serial.println(random(0, 100));
-    // Serial.println("Sending humidity data...");
-    // tb.sendTelemetryFloat("Umidade", random(40, 90));
-
-
-    tb.loop();
-    ultimo_tempo = millis();
   }
+
+  // Uploads new telemetry to ThingsBoard using HTTP.
+  Serial.println("Sending temperature data...");
+  tb.sendTelemetryInt("Valor aleatorio", random(0, 100));
+  tb.sendTelemetryInt("Umidade do solo", porcentagem);
+  tb.sendTelemetryFloat("Umidade do Ar", umidadeDoAr);
+  tb.sendTelemetryFloat("Temperatura", temperatura);
+  Serial.print("Random number: ");
+  Serial.println(random(0, 100));
+  // Serial.println("Sending humidity data...");
+  // tb.sendTelemetryFloat("Umidade", random(40, 90));
+
+
+  tb.loop();
+  ultimo_tempo = millis();
 }
