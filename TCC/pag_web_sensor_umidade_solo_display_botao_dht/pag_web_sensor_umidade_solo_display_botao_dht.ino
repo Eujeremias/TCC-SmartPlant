@@ -27,9 +27,9 @@ float temp;
 float umi;
 
 //=============================
+#define THINGSBOARD_ENABLE_PROGMEM 0  //não remover essa linha! (ao remover o nodemcu ficará reiniciando sozinho)
 #include "ThingsBoard.h"
 // #include "pubsubclient.h"
-#define THINGSBOARD_ENABLE_PROGMEM 0  //não remover essa linha! (ao remover o nodemcu ficará reiniciando sozinho)
 #define WIFI_AP "IFAL - Rio Largo"
 #define WIFI_PASSWORD "ifalriolargo"
 #define TOKEN "WLMk433vZ1vkwPaoKmxl"
