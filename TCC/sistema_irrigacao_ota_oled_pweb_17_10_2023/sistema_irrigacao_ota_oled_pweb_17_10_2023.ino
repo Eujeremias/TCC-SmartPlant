@@ -22,11 +22,11 @@ constexpr char TOKEN[] = "WLMk433vZ1vkwPaoKmxl";
 // IPAddress primaryDNS(8, 8, 8, 8);
 // IPAddress secondaryDNS(8, 8, 4, 4);
 
-IPAddress local_IP(10, 220, 30, 120);
-IPAddress gateway(10, 220, 30, 1);
-IPAddress subnet(255, 255, 255, 0);
-IPAddress primaryDNS(8, 8, 8, 8);
-IPAddress secondaryDNS(8, 8, 4, 4);
+// IPAddress local_IP(10, 220, 30, 120);
+// IPAddress gateway(10, 220, 30, 1);
+// IPAddress subnet(255, 255, 255, 0);
+// IPAddress primaryDNS(8, 8, 8, 8);
+// IPAddress secondaryDNS(8, 8, 4, 4);
 
 // bibliotecas e comandos oled ------------------------------
 #include <Wire.h>
@@ -56,6 +56,7 @@ int contador = 0;
 float temperatura;
 float umidadeDoAr;
 int pinBomba = D4;
+int LED1 = D6;
 
 constexpr char THINGSBOARD_SERVER[] = "demo.thingsboard.io";
 constexpr uint16_t THINGSBOARD_PORT = 1883U;
@@ -107,6 +108,21 @@ void raiz() {
   String s = pagina;
   server.send(200, "text/html", s);
 }
+
+void tratarBotao() {
+  int botaoDaVez = (server.arg("nBotao")).toInt();
+
+  if (botaoDaVez == 1) {
+    digitalWrite(LED1, !digitalRead(LED1));  //Inverte o estado do led
+    digitalWrite(pinBomba, !digitalRead(pinBomba));
+  }
+  //else if (botaoDaVez == 2) {
+    //digitalWrite(LED2, !digitalRead(LED2));
+  //}
+  String s = pagina;
+  server.send(200, "text/html", s);
+}
+
 void gerar_numero() {
   //int a = random(101);
   //int a = porcentagem;
@@ -156,6 +172,7 @@ bool reconnect() {
 void setup() {
   pinMode(D0, OUTPUT);
   pinMode(pinBomba, OUTPUT);
+  pinMode(LED1, OUTPUT);
   //Inicializando
   dht.begin();
 
@@ -248,7 +265,7 @@ void setup() {
   delay(1000);
 
   //--------------------------------
-  WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);  //PASSA OS PARÂMETROS PARA A FUNÇÃO QUE VAI SETAR O IP FIXO NO NODEMCU
+  // WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);  //PASSA OS PARÂMETROS PARA A FUNÇÃO QUE VAI SETAR O IP FIXO NO NODEMCU
   Serial.println("");
   while (WiFi.status() != WL_CONNECTED) {
     digitalWrite(led, !digitalRead(led));
@@ -296,6 +313,7 @@ void setup() {
   server.on("/lerUmidade", mostrarUmidadeSolo);
   server.on("/lerTemperatura", mostrarTemperatura);
   server.on("/lerUmidadeAr", mostrarUmidadeAr);
+  server.on("/requisicaoBotao", tratarBotao);
 
   server.begin();
 }
@@ -305,7 +323,7 @@ void loop() {
 
   if (millis() - ultimo_tempo > 500) {
     digitalWrite(D0, !digitalRead(D0));
-    digitalWrite(pinBomba, !digitalRead(pinBomba));
+    //digitalWrite(pinBomba, !digitalRead(pinBomba));
         
 
     temperatura = dht.readTemperature();
@@ -345,7 +363,10 @@ void loop() {
     aleatorio = random(101);
     display.setCursor(0, 48);
     display.print("random: ");
-    display.print(aleatorio);
+    display.println(aleatorio);
+    display.print(WiFi.localIP());
+
+
     display.display();
 
     if (!reconnect()) {
