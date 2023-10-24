@@ -12,9 +12,9 @@
 #define THINGSBOARD_ENABLE_PROGMEM 0  //não remover essa linha! (ao remover o nodemcu ficará reiniciando sozinho)
 #include <ThingsBoard.h>
 
-constexpr char WIFI_SSID[] = "IFAL - Rio Largo";
-constexpr char WIFI_PASSWORD[] = "ifalriolargo";
-constexpr char TOKEN[] = "WLMk433vZ1vkwPaoKmxl";
+constexpr char WIFI_SSID[] = "Espaco 4.0";
+constexpr char WIFI_PASSWORD[] = "Esp.2022";
+constexpr char TOKEN[] = "wnDFlW7dfiU0XzTeIQBU";
 
 // IPAddress local_IP(192, 168, 0, 110);
 // IPAddress gateway(192, 168, 0, 1);

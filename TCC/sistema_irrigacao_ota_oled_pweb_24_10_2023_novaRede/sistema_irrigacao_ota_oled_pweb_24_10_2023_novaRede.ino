@@ -14,7 +14,7 @@
 
 constexpr char WIFI_SSID[] = "IFAL - Rio Largo";
 constexpr char WIFI_PASSWORD[] = "ifalriolargo";
-constexpr char TOKEN[] = "WLMk433vZ1vkwPaoKmxl";
+constexpr char TOKEN[] = "wnDFlW7dfiU0XzTeIQBU"; //Thingsboard Servidor-IFAL | usar rede Espaco 4.0 para editar dashboard | login tenant
 
 // IPAddress local_IP(192, 168, 0, 110);
 // IPAddress gateway(192, 168, 0, 1);
@@ -49,7 +49,7 @@ DHT dht(PINODHT, MODELODHT);
 int pinoSensorUmidade = A0;
 int valor;
 int porcentagem;
-unsigned long int ultimo_tempo = 0;
+unsigned long int ultimo_tempo = 0, ultimo_tempo2 = 0;
 int led = D0;
 int aleatorio;
 int contador = 0;
@@ -112,10 +112,9 @@ void raiz() {
 void tratarBotao() {
   int botaoDaVez = (server.arg("nBotao")).toInt();
 
-  if(botaoDaVez == 1){
+  if (botaoDaVez == 1) {
     digitalWrite(LED1, !digitalRead(LED1));
-  }
-  else if (botaoDaVez == 2) {
+  } else if (botaoDaVez == 2) {
     digitalWrite(LED1, !digitalRead(LED1));
     digitalWrite(pinBomba, !digitalRead(pinBomba));
   }
@@ -191,7 +190,7 @@ void setup() {
     ESP.restart();
   }
   // Hostname defaults to esp8266-[ChipID]
-  ArduinoOTA.setHostname("GereMais");
+  ArduinoOTA.setHostname("GM-Espaco");
 
   ArduinoOTA.onStart([]() {
     String type;
@@ -329,7 +328,7 @@ void loop() {
   if (millis() - ultimo_tempo > 500) {
     digitalWrite(D0, !digitalRead(D0));
     //digitalWrite(pinBomba, !digitalRead(pinBomba));
-        
+
 
     temperatura = dht.readTemperature();
     umidadeDoAr = dht.readHumidity();
@@ -396,11 +395,13 @@ void loop() {
     Serial.println(random(0, 100));
     // Serial.println("Sending humidity data...");
     // tb.sendTelemetryFloat("Umidade", random(40, 90));
-
-
     tb.loop();
 
     ultimo_tempo = millis();
   }
-  ArduinoOTA.handle();
+
+  if (millis() - ultimo_tempo2 > 1000) {
+    ArduinoOTA.handle();
+    ultimo_tempo2 = millis();
+  }
 }
